@@ -24,3 +24,5 @@ Future plans:
   - add Readout * e^x functionality so calculations with larger numbers can be done
   - Add Pi
   - Still create a fork with the parody calculator I originally wanted to build (depending if I do not find something more productive do code)
+
+P.S: The code_playground.py file can be ignored. I just created it to test out concepts if I do not want to mess around with my main code.
