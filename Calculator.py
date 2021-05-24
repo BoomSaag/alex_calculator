@@ -25,7 +25,8 @@ buttonSize = 50
 
 # Calculation Variables
 choice = 0
-plus = 0
+save = 0
+div_zero = False
 
 # LCD display variables and list
 readout = str(0)
@@ -43,13 +44,13 @@ calc_type = calc_font.render(readout, True, (0, 200, 50))
 # button class
 class button:
     # Key slots
-    slots = [(70, 260, "9"), (130, 260, "8"), (190, 260, "7"),
-             (70, 320, "6"), (130, 320, "5"), (190, 320, "4"),
-             (70, 380, "3"), (130, 380, "2"), (190, 380, "1"),
-             (130, 440, "0"), (260, 200, "/"), (260, 260, "x"),
-             (260, 320, "-"), (260, 380, "+"), (260, 440, "="),
-             (70, 200, "C"), (190, 440, "."), (130, 200, "√"),
-             (190, 200, "%")
+    slots = [(80, 260, "9"), (140, 260, "8"), (200, 260, "7"),
+             (80, 320, "6"), (140, 320, "5"), (200, 320, "4"),
+             (80, 380, "3"), (140, 380, "2"), (200, 380, "1"),
+             (140, 440, "0"), (270, 200, "/"), (270, 260, "x"),
+             (270, 320, "-"), (270, 380, "+"), (270, 440, "="),
+             (80, 200, "C"), (200, 440, "."), (140, 200, "√"),
+             (200, 200, "%")
              ]
     slot = 0
     x = 0
@@ -68,7 +69,14 @@ class button:
         pygame.draw.circle(surface, (80, 90, 90), (self.x + (button.width // 2), self.y + (button.height // 2)), (button.width - 8) // 2, 0)
         face = pygame.font.SysFont(None, 30)
         face_num = face.render(str(self.key_value), True, (0, 0, 0))
-        surface.blit(face_num, (self.x + 20, self.y + 16))
+        num_width = face_num.get_rect().size
+        surface.blit(face_num, ((self.x + 25) - (num_width[0] // 2), self.y + 16))
+
+    def nextstep(self):
+        global save, readout
+
+        clear_lcd()
+        readout = str(save)
 
     # Mouse Click
     def click(self):
@@ -78,7 +86,7 @@ class button:
         # 3 = multiplication
         # 4 = division
         # 5 = square root
-        global mousePosition, readout, plus, choice, buttonSize
+        global mousePosition, readout, save, choice, buttonSize
 
         if mousePosition[0] > self.x and mousePosition[0] < self.x + button.width:
             if mousePosition[1] > self.y and mousePosition[1] < self.y + button.height:
@@ -88,42 +96,59 @@ class button:
                 self.y += 2
                 if self.key_value == "C":  # button number 15 is "Clear" button
                     choice = 0
-                    plus = 0
+                    save = 0
                     clear_lcd()
                 elif self.key_value == "+":  # addition
                     function_check()
                     choice = 1
-                    clear_lcd()
-                    readout = str(plus)
+                    self.nextstep()
 
                 elif self.key_value == "-":  # subtraction
                     function_check()
                     choice = 2
-                    clear_lcd()
-                    readout = str(plus)
+                    self.nextstep()
 
                 elif self.key_value == "x":  # multiplication
                     function_check()
                     choice = 3
-                    clear_lcd()
-                    readout = str(plus)
+                    self.nextstep()
 
                 elif self.key_value == "/":  # division
                     function_check()
                     choice = 4
-                    clear_lcd()
-                    readout = str(plus)
+                    self.nextstep()
 
                 elif self.key_value == "=":  # Equals
-                    function_check()
-                    choice = 0
-                    clear_lcd()
-                    readout = str(plus)
+                    if float(readout) == 0.0 and choice == 4:
+                        # If you try divide by zero:
+                        clear_lcd()
+                        readout = "INFINITY"
+                        choice = 0
+                    else:
+                        function_check()
+                        choice = 0
+                        self.nextstep()
 
                 elif self.key_value == "√": # Root
                     choice = 5
-                    clear_lcd()
-                    readout = str(plus)
+                    self.nextstep()
+
+                elif self.key_value == "%":
+                    if choice == 0:
+                        save = float(readout) / 100
+                    elif choice == 1:
+                        save = save * (1 + (float(readout) / 100))
+                    elif choice == 2:
+                        save = save * (1 - (float(readout) / 100))
+                    elif choice == 3:
+                        save = save * (float(readout) / 100)
+                    elif choice == 4:
+                        save = save / (float(readout) / 100)
+                    # function_check()
+                    if (save - int(save)) == 0:
+                        save = int(save)
+                    choice = 0
+                    self.nextstep()
 
                 elif len(lcd_view) < 9:
                     if self.key_value == ".": # Point
@@ -150,26 +175,27 @@ def draw_buttons():
         button.draw(surface)
 
 
+# Function check is used to do the calculation based on what mathematical operation was chosen
 def function_check():
-    global plus, choice, readout
-
-    if readout == "ERROR":
-        readout = 0
+    global save, choice, readout, div_zero
 
     if choice == 0:
-        plus = float(readout)
+        save = float(readout)
     elif choice == 1:
-        plus += float(readout)
+        save += float(readout)
     elif choice == 2:
-        plus = plus - float(readout)
+        save -= float(readout)
     elif choice == 3:
-        plus = plus * float(readout)
+        save = save * float(readout)
     elif choice == 4:
-        plus = plus / float(readout)
+        save = save / float(readout)
+
     elif choice == 5:
-        plus = (float(readout)) ** 0.5
-    if (plus - int(plus)) == 0:
-        plus = int(plus)
+        save = (float(readout)) ** 0.5
+    elif choice == 6:
+        save = save / 100
+    if (save - int(save)) == 0:
+        save = int(save)
 
 
 def calcBackground():
@@ -179,6 +205,7 @@ def calcBackground():
     pygame.draw.rect(surface, (40, 40, 40), (windowBorder + 25, windowBorder + 35, (windowWidth - (windowBorder * 2 + 50)), 75))
     pygame.draw.rect(surface, (0, 65, 50), (windowBorder + 30, windowBorder + 40, (windowWidth - (windowBorder * 2 + 60)), 65))
     pygame.draw.rect(surface, (40, 40, 40), (windowBorder + 25, windowBorder + 120, (windowWidth - (windowBorder * 2 + 50)), 4))
+    pygame.draw.rect(surface, (60, 60, 60), (windowBorder + 25, windowBorder + 500, (windowWidth - (windowBorder * 2 + 50)), 40))
     # Calculator Title
     surface.blit(label_text, (windowBorder + 30, windowBorder + 4))
 
@@ -189,8 +216,7 @@ def calcReadout():
     global readout
 
     if len(lcd_view) >= 1:  # This allows "0" to be shown at start
-        conCat = "".join(lcd_view)
-        readout = conCat
+        readout = "".join(lcd_view)
     # If the above is not in place, the readout at the beginning is blank due to it printing the list instead of 0.
 
     if len(readout) > 9:
