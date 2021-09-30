@@ -1,4 +1,4 @@
-# alex_calculator
+# The Spassio Calculator
 
 Basic Calculator. In some cases more intelligent than some people I have met... :D
 
